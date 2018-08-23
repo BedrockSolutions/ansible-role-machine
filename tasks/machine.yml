@@ -1,0 +1,21 @@
+---
+
+- block:
+    - validate:
+        schema:
+          type: object
+          properties:
+            command:
+              type: string
+              enum:
+                - ansible
+                - default
+                - dependency
+                - factomd
+          required:
+            - command
+        instance: "{{ machine }}"
+
+    - include_tasks: '{{ machine.command }}.yml'
+  tags:
+    - machine

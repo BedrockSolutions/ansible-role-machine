@@ -1,0 +1,4 @@
+---
+
+- include_tasks: machine.yml
+  when: (machine is not defined) or ('command' not in machine) or (machine.command != 'dependency')

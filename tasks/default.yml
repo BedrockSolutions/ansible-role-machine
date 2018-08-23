@@ -1,0 +1,146 @@
+---
+
+- block:
+    - validate:
+        schema:
+          type: object
+          properties:
+            fail2ban_ignored_ips:
+              type: array
+              items:
+                type: string
+                format: ipv4
+            fail2ban_slack_webhook_url:
+              type: string
+              format: uri
+            os_kernel_ip_forwarding:
+              type: boolean
+              default: no
+            ssh_allowed_networks:
+              type: array
+              items:
+                type: string
+                format: ipv4
+              minLength: 1
+            ssh_allow_agent_forwarding:
+              type: boolean
+              default: no
+            ssh_allow_tcp_forwarding:
+              type: boolean
+              default: no
+            ssh_authorized_keys:
+              type: array
+              items:
+                type: string
+              minLength: 1
+            ssh_permit_tunnel:
+              type: boolean
+              default: no
+            stackdriver_ingest_logs:
+              type: boolean
+              default: no
+          required:
+            - os_kernel_ip_forwarding
+            - ssh_allowed_networks
+            - ssh_allow_agent_forwarding
+            - ssh_allow_tcp_forwarding
+            - ssh_authorized_keys
+            - ssh_permit_tunnel
+            - stackdriver_ingest_logs
+        instance: "{{ machine }}"
+      register: machine_validated
+
+    - set_fact:
+        machine_v: "{{ machine_validated.result }}"
+
+
+    - name: "Uninstall sshguard"
+      apt:
+        name: sshguard
+        state: absent
+      become: yes
+
+    - name: "Upgrade packages"
+      import_role:
+        name: bedrock.os
+      vars:
+        os:
+          command: upgrade_packages
+          update_cache: yes
+
+    - name: "Authorize SSH keys"
+      import_role:
+        name: bedrock.ssh
+      vars:
+        ssh:
+          command: authorize_keys
+          authorized_keys: "{{ machine_v.ssh_authorized_keys }}"
+          exclusive: true
+
+    - name: "Install editors"
+      apt:
+        name:
+          - nano
+          - vim
+        state: present
+      become: yes
+
+    - name: 'Harden SSH'
+      import_role:
+        name: bedrock.ssh
+      vars:
+        ssh:
+          command: harden
+          allow_agent_forwarding: "{{ machine_v.ssh_allow_agent_forwarding }}"
+          allow_tcp_forwarding: "{{ machine_v.ssh_allow_tcp_forwarding }}"
+          permit_tunnel: "{{ machine_v.ssh_permit_tunnel }}"
+
+    - name: 'Install UFW'
+      import_role:
+        name: bedrock.os
+      vars:
+        os:
+          command: install_ufw
+          ssh_allowed_networks: "{{ machine_v.ssh_allowed_networks }}"
+
+    - name: "Install Stackdriver agents"
+      import_role:
+        name: bedrock.stackdriver
+      vars:
+        stackdriver:
+          command: install
+
+    - name: 'Install fail2ban'
+      import_role:
+        name: bedrock.fail2ban
+      vars:
+        fail2ban:
+          command: install
+          stackdriver_ingest_log: "{{ machine_v.stackdriver_ingest_logs }}"
+
+    - name: 'Add SSH jail to fail2ban'
+      import_role:
+        name: bedrock.fail2ban
+      vars:
+        fail2ban:
+          command: create_sshd_jail
+          ignored_ips: "{{ machine_v.fail2ban_ignored_ips | default(None) }}"
+          slack_webhook_url: "{{ machine_v.fail2ban_slack_webhook_url | default(None) }}"
+
+    - name: 'Harden operating system'
+      import_role:
+        name: bedrock.os
+      vars:
+        os:
+          command: harden
+          kernel_ip_forwarding: "{{ machine_v.os_kernel_ip_forwarding }}"
+
+    - name: "Install unattended-upgrades"
+      import_role:
+        name: bedrock.os
+      vars:
+        os:
+          command: install_unattended_upgrades
+          stackdriver_ingest_log: "{{ machine_v.stackdriver_ingest_logs }}"
+  tags:
+    - machine_default
