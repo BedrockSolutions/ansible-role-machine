@@ -1,0 +1,68 @@
+---
+
+- block:
+    - validate:
+        schema:
+          type: object
+          properties:
+            docker_build:
+              type: string
+              default: stable
+            docker_user:
+              type: string
+              default: ubuntu
+            swarm_manager_host:
+              type: string
+              format: hostname
+            swarm_token:
+              type: string
+            tls_cert_url:
+              type: string
+              format: uri
+            tls_key_url:
+              type: string
+              format: uri
+          required:
+        instance: "{{ machine }}"
+      register: machine_validated
+
+    - set_fact:
+        machine_v: "{{ machine_validated.result }}"
+
+    - import_role:
+        name: bedrock.docker
+      vars:
+        docker:
+          command: download_tls_cert_and_key
+          cert_url: "{{ machine_v.tls_cert_url }}"
+          key_url: "{{ machine_v.tls_key_url }}"
+      when:
+        - "'tls_cert_url' in machine_v"
+        - "'tls_key_url' in machine_v"
+
+    - import_role:
+        name: bedrock.docker
+      vars:
+        docker:
+          command: install
+          build: "{{ machine_v.docker_build }}"
+          user: "{{ machine_v.docker_user }}"
+
+    - import_role:
+        name: bedrock.docker
+      vars:
+        docker:
+          command: swarm_worker_node
+          manager_host: "{{ machine_v.swarm_manager_host }}"
+          token: "{{ machine_v.swarm_token }}"
+      when:
+        - "'swarm_manager_host' in machine_v"
+        - "'swarm_token' in machine_v"
+
+    - import_role:
+        name: bedrock.os
+      vars:
+        os:
+          command: reboot_if_required
+  tags:
+    - machine_docker

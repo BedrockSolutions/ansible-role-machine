@@ -16,6 +16,8 @@
             os_kernel_ip_forwarding:
               type: boolean
               default: no
+            os_swap_device:
+              type: string
             ssh_allowed_networks:
               type: array
               items:
@@ -36,7 +38,7 @@
             ssh_permit_tunnel:
               type: boolean
               default: no
-            stackdriver_ingest_logs:
+            stackdriver_enabled:
               type: boolean
               default: no
           required:
@@ -46,13 +48,12 @@
             - ssh_allow_tcp_forwarding
             - ssh_authorized_keys
             - ssh_permit_tunnel
-            - stackdriver_ingest_logs
+            - stackdriver_enabled
         instance: "{{ machine }}"
       register: machine_validated
 
     - set_fact:
         machine_v: "{{ machine_validated.result }}"
-
 
     - name: "Uninstall sshguard"
       apt:
@@ -109,6 +110,7 @@
       vars:
         stackdriver:
           command: install
+      when machine_v.stackdriver_enabled
 
     - name: 'Install fail2ban'
       import_role:
@@ -116,7 +118,7 @@
       vars:
         fail2ban:
           command: install
-          stackdriver_ingest_log: "{{ machine_v.stackdriver_ingest_logs }}"
+          stackdriver_enabled: "{{ machine_v.stackdriver_enabled }}"
 
     - name: 'Add SSH jail to fail2ban'
       import_role:
@@ -141,6 +143,14 @@
       vars:
         os:
           command: install_unattended_upgrades
-          stackdriver_ingest_log: "{{ machine_v.stackdriver_ingest_logs }}"
+          stackdriver_enabled: "{{ machine_v.stackdriver_enabled }}"
+
+    - import_role:
+        name: bedrock.os
+      vars:
+        os:
+          command: swap
+          device: "{{ machine_v.os_swap_device }}"
+      when: "'os_swap_device' in machine_v"
   tags:
     - machine_default
