@@ -21,6 +21,9 @@
             stackdriver_enabled:
               type: boolean
               default: no
+            swarm_manager_host:
+              type: string
+              format: hostname
           required:
             - database_volume_device
             - docker_image
@@ -59,6 +62,7 @@
           external_network_interface: "{{ machine_v.external_network_interface }}"
           network: "{{ machine_v.network }}"
           stackdriver_enabled: "{{ machine_v.stackdriver_enabled }}"
+          swarm_manager_host: "{{ machine_v.swarm_manager_host }}"
 
     - import_role:
         name: bedrock.factomd
