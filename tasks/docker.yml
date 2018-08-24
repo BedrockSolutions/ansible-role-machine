@@ -5,26 +5,23 @@
         schema:
           type: object
           properties:
-            docker_build:
+            build:
               type: string
               default: stable
-            docker_user:
-              type: string
-              default: ubuntu
             swarm_manager_host:
               type: string
               format: hostname
             swarm_token:
               type: string
-            tls_cert_url:
+            tls_enabled:
+              type: boolean
+              default: no
+            user:
               type: string
-              format: uri
-            tls_key_url:
-              type: string
-              format: uri
+              default: ubuntu
           required:
-            - docker_build
-            - docker_user
+            - build
+            - user
         instance: "{{ machine }}"
       register: machine_validated
 
@@ -35,20 +32,10 @@
         name: bedrock.docker
       vars:
         docker:
-          command: download_tls_cert_and_key
-          cert_url: "{{ machine_v.tls_cert_url }}"
-          key_url: "{{ machine_v.tls_key_url }}"
-      when:
-        - "'tls_cert_url' in machine_v"
-        - "'tls_key_url' in machine_v"
-
-    - import_role:
-        name: bedrock.docker
-      vars:
-        docker:
           command: install
-          build: "{{ machine_v.docker_build }}"
-          user: "{{ machine_v.docker_user }}"
+          build: "{{ machine_v.build }}"
+          tls_enabled: "{{ machine_v.tls_enabled }}"
+          user: "{{ machine_v.user }}"
 
     - import_role:
         name: bedrock.docker

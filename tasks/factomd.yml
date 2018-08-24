@@ -7,8 +7,14 @@
           properties:
             database_volume_device:
               type: string
+            docker_build:
+              type: string
+              default: stable
             docker_image:
               type: string
+            docker_user:
+              type: string
+              default: ubuntu
             external_network_interface:
               type: string
             keys_volume_device:
@@ -39,6 +45,8 @@
         factomd:
           command: install
           database_volume_device: "{{ machine_v.database_volume_device }}"
+          docker_build: "{{ machine_v.docker_build }}"
+          docker_user: "{{ machine_v.docker_user }}"
           external_network_interface: "{{ machine_v.external_network_interface }}"
           keys_volume_device: "{{ machine_v.keys_volume_device }}"
           network: "{{ machine_v.network }}"
