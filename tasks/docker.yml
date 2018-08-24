@@ -23,6 +23,8 @@
               type: string
               format: uri
           required:
+            - docker_build
+            - docker_user
         instance: "{{ machine }}"
       register: machine_validated
 
