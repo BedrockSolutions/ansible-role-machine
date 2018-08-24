@@ -7,6 +7,8 @@
           properties:
             database_volume_device:
               type: string
+            docker_image:
+              type: string
             external_network_interface:
               type: string
             keys_volume_device:
@@ -21,6 +23,7 @@
               default: no
           required:
             - database_volume_device
+            - docker_image
             - keys_volume_device
             - network
             - stackdriver_enabled
