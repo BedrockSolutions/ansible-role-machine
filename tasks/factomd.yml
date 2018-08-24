@@ -21,9 +21,6 @@
             stackdriver_enabled:
               type: boolean
               default: no
-            swarm_manager_host:
-              type: string
-              format: hostname
           required:
             - database_volume_device
             - docker_image
@@ -37,32 +34,15 @@
         machine_v: "{{ machine_validated.result }}"
 
     - import_role:
-        name: bedrock.docker
-      vars:
-        docker:
-          command: local_volume_from_device
-          device: "{{ machine_v.database_volume_device }}"
-          mount_point: /mnt/docker_volumes/factom_database
-          name: factom_database
-
-    - import_role:
-        name: bedrock.docker
-      vars:
-        docker:
-          command: local_volume_from_device
-          device: "{{ machine_v.keys_volume_device }}"
-          mount_point: /mnt/docker_volumes/factom_keys
-          name: factom_keys
-
-    - import_role:
         name: bedrock.factomd
       vars:
         factomd:
           command: install
+          database_volume_device: "{{ machine_v.database_volume_device }}"
           external_network_interface: "{{ machine_v.external_network_interface }}"
+          keys_volume_device: "{{ machine_v.keys_volume_device }}"
           network: "{{ machine_v.network }}"
           stackdriver_enabled: "{{ machine_v.stackdriver_enabled }}"
-          swarm_manager_host: "{{ machine_v.swarm_manager_host }}"
 
     - import_role:
         name: bedrock.factomd
