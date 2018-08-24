@@ -67,6 +67,11 @@
         os:
           command: reboot_if_required
 
+    - name: "Ensure fluentd is running"
+      wait_for:
+        port: 24224
+      when: machine_v.stackdriver_enabled
+
     - import_role:
         name: bedrock.factomd
       vars:
