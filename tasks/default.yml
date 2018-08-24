@@ -110,7 +110,7 @@
       vars:
         stackdriver:
           command: install
-      when machine_v.stackdriver_enabled
+      when: machine_v.stackdriver_enabled
 
     - name: 'Install fail2ban'
       import_role:
